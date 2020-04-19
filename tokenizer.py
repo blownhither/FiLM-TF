@@ -12,18 +12,21 @@ class Tokenizer:
             del questions
             tokens = list(tokens)
             tokens.sort()
-            self.id2word = dict(enumerate(tokens, start=1))
+            self.id2word = dict(enumerate(tokens, start=2))
             self.word2id = {v: k for k, v in self.id2word.items()}
             self.unk_id = 0
             self.id2word[self.unk_id] = 'UNK'
             self.word2id['UNK'] = self.unk_id
+            self.pad_id = 1
+            self.id2word[self.pad_id] = 'PAD'
+            self.word2id['PAD'] = self.pad_id
         else:
             self.id2word = None
             self.word2id = None
             self.unk_id = None
 
     def encode_sentence(self, sent):
-        return [self.word2id.get(x, self.unk_id) for x in sent.split(' ')]
+        return [self.word2id.get(x, self.unk_id) for x in sent.lower().split(' ')]
 
     def decode_sentence(self, ids):
         return [self.id2word.get(x, '??') for x in ids]
@@ -50,11 +53,13 @@ class Tokenizer:
         self.word2id = state['word2id']
         self.id2word = state['id2word']
         self.unk_id = self.word2id['UNK']
+        self.pad_id = self.word2id['PAD']
         return self
 
 
 if __name__ == '__main__':
     t = Tokenizer('data/CLEVR_v1.0/questions/CLEVR_tiny_questions.json')
+    t.add_special('PAD')
     print(t.encode_sentence("hello many big objects"))
     t.save('tmp/tiny-tokenizer.pickle')
     t = Tokenizer().load('tmp/tiny-tokenizer.pickle')
