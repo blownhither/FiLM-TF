@@ -14,14 +14,16 @@ class Tokenizer:
             tokens.sort()
             self.id2word = dict(enumerate(tokens, start=1))
             self.word2id = {v: k for k, v in self.id2word.items()}
-            self.id2word[0] = 'UNK'
-            self.word2id['UNK'] = 0
+            self.unk_id = 0
+            self.id2word[self.unk_id] = 'UNK'
+            self.word2id['UNK'] = self.unk_id
         else:
             self.id2word = None
             self.word2id = None
+            self.unk_id = None
 
     def encode_sentence(self, sent):
-        return [self.word2id.get(x, 0) for x in sent.split(' ')]
+        return [self.word2id.get(x, self.unk_id) for x in sent.split(' ')]
 
     def decode_sentence(self, ids):
         return [self.id2word.get(x, '??') for x in ids]
@@ -45,8 +47,9 @@ class Tokenizer:
     def load(self, file_name):
         with open(file_name, 'rb') as f:
             state = pickle.load(f)
-            self.word2id = state['word2id']
-            self.id2word = state['id2word']
+        self.word2id = state['word2id']
+        self.id2word = state['id2word']
+        self.unk_id = self.word2id['UNK']
         return self
 
 
