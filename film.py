@@ -29,24 +29,27 @@ class TrainableFilmModel:
         return np.mean(loss_records)
 
 
-def main():
+def main(argv):
     FLAGS = flags.FLAGS
-    flags.DEFINE_string()
 
-
-    tokenizer = Tokenizer().load('tmp/tiny-tokenizer.pickle')
+    tokenizer = Tokenizer().load(FLAGS.tokenizer_path)
     label_encoder = LabelEncoder(LabelEncoder.TRAIN_LABELS)
-    dataset = read_paired_dataset(
-        question_file='data/CLEVR_v1.0/questions/CLEVR_tiny_val_questions.json',
-        image_dir='data/CLEVR_v1.0/images/val/', tokenizer=tokenizer, label_encoder=label_encoder,
+    train_dataset = read_paired_dataset(
+        question_file=FLAGS.train_questions,
+        image_dir=FLAGS.image_dir, tokenizer=tokenizer, label_encoder=label_encoder,
         batch_size=2, read_question_family=True, read_label=True)
 
     model = TrainableFilmModel(tokenizer.get_vocab_size(), len(label_encoder.TRAIN_LABELS))
-    for batch in dataset:
+    for batch in train_dataset:
         loss = model.train_step(batch)
-        print(loss)
+        print(loss, flush=True)
 
 
 if __name__ == '__main__':
-    main()
+    flags.DEFINE_string('tokenizer_path', 'tmp/tiny-tokenizer.pickle', 'path to load tokenizer')
+    flags.DEFINE_string('train_questions',
+                        'data/CLEVR_v1.0/questions/CLEVR_tiny_val_questions.json',
+                        'path to read question json')
+    flags.DEFINE_string('image_dir', 'data/CLEVR_v1.0/images/val/', 'path to read question json')
+    app.run(main)
 
