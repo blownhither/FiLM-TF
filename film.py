@@ -1,5 +1,6 @@
 import numpy as np
 import tensorflow as tf
+from absl import app, flags
 
 from model import FilmModel
 from tokenizer import Tokenizer, LabelEncoder
@@ -28,20 +29,24 @@ class TrainableFilmModel:
         return np.mean(loss_records)
 
 
-def train():
+def main():
+    FLAGS = flags.FLAGS
+    flags.DEFINE_string()
+
+
     tokenizer = Tokenizer().load('tmp/tiny-tokenizer.pickle')
-    label_encoder = LabelEncoder(LabelEncoder.TINY_VAL_LABELS)
+    label_encoder = LabelEncoder(LabelEncoder.TRAIN_LABELS)
     dataset = read_paired_dataset(
         question_file='data/CLEVR_v1.0/questions/CLEVR_tiny_val_questions.json',
         image_dir='data/CLEVR_v1.0/images/val/', tokenizer=tokenizer, label_encoder=label_encoder,
         batch_size=2, read_question_family=True, read_label=True)
 
-    model = TrainableFilmModel(tokenizer.get_vocab_size(), len(label_encoder.TINY_VAL_LABELS))
+    model = TrainableFilmModel(tokenizer.get_vocab_size(), len(label_encoder.TRAIN_LABELS))
     for batch in dataset:
         loss = model.train_step(batch)
         print(loss)
 
 
 if __name__ == '__main__':
-    train()
+    main()
 

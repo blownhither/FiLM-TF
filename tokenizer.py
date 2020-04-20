@@ -1,14 +1,19 @@
+import os
 import json
 import pickle
+from absl import app, flags
 
 
 class Tokenizer:
-    def __init__(self, question_file=None):
-        if question_file:
-            questions = json.load(open(question_file, 'r'))['questions']
+    def __init__(self, questions=None):
+        """
+        :param questions: List[str]
+        """
+        if questions:
+            print(len(questions), 'questions')
             tokens = set()
             for x in questions:
-                tokens.update(x['question'].strip('?').lower().split(' '))
+                tokens.update(x.lower().split(' '))
             del questions
             tokens = list(tokens)
             tokens.sort()
@@ -58,8 +63,9 @@ class Tokenizer:
 
 
 class LabelEncoder:
-    TINY_VAL_LABELS = {'cyan', 'rubber', 'brown', 'sphere', 'yes', '0', '1', 'no', 'metal',
-                       'purple', '2', '6', 'yellow'}
+    TRAIN_LABELS = {'0', '1', '10', '2', '3', '4', '5', '6', '7', '8', '9', 'blue', 'brown', 'cube',
+                    'cyan', 'cylinder', 'gray', 'green', 'large', 'metal', 'no', 'purple', 'red',
+                    'rubber', 'small', 'sphere', 'yellow', 'yes'}
 
     def __init__(self, labels):
         labels = sorted(list(labels))
@@ -73,12 +79,22 @@ class LabelEncoder:
         return self.id2label[id_]
 
 
-if __name__ == '__main__':
-    t = Tokenizer('data/CLEVR_v1.0/questions/CLEVR_tiny_val_questions.json')
-    print(t.encode_sentence("hello many big objects"))
-    t.save('tmp/tiny-tokenizer.pickle')
-    t = Tokenizer().load('tmp/tiny-tokenizer.pickle')
-    print(t.word2id)
+def main(argv):
+    FLAGS = flags.FLAGS
+    questions = json.load(open(FLAGS.json_path, 'r'))['questions']
+    t = Tokenizer([x['question'].strip('?') for x in questions])
+    # print(t.encode_sentence("hello many big objects"))
+    t.save(FLAGS.save_to)
+    # t = Tokenizer().load('tmp/tiny-tokenizer.pickle')
+    # print(t.word2id)
     print('vocab size', t.get_vocab_size())
 
+    en = LabelEncoder(set([x['answer'] for x in questions]))
+    print(en.id2label.values())
 
+
+if __name__ == '__main__':
+    flags.DEFINE_string('json_path', 'data/CLEVR_v1.0/questions/CLEVR_tiny_val_questions.json',
+                        'path to read question json')
+    flags.DEFINE_string('save_to', 'tmp/tiny-tokenizer.pickle', 'path to save tokenizer')
+    app.run(main)

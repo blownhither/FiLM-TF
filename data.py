@@ -41,7 +41,7 @@ def read_paired_dataset(question_file, image_dir, tokenizer: Tokenizer, label_en
 def _test_read_paired_dataset():
     from matplotlib import pyplot as plt
     tokenizer = Tokenizer().load('tmp/tiny-tokenizer.pickle')
-    label_encoder = LabelEncoder(LabelEncoder.TINY_VAL_LABELS)
+    label_encoder = LabelEncoder(LabelEncoder.TRAIN_LABELS)
     dataset = read_paired_dataset(
         question_file='data/CLEVR_v1.0/questions/CLEVR_tiny_val_questions.json',
         image_dir='data/CLEVR_v1.0/images/val/', tokenizer=tokenizer, label_encoder=label_encoder,
