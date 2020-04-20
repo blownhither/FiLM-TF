@@ -57,6 +57,22 @@ class Tokenizer:
         return self
 
 
+class LabelEncoder:
+    TINY_VAL_LABELS = {'cyan', 'rubber', 'brown', 'sphere', 'yes', '0', '1', 'no', 'metal',
+                       'purple', '2', '6', 'yellow'}
+
+    def __init__(self, labels):
+        labels = sorted(list(labels))
+        self.id2label = dict(enumerate(labels))
+        self.label2id = {v: k for k, v in self.id2label.items()}
+
+    def encode(self, label):
+        return self.label2id[label]
+
+    def decode(self, id_):
+        return self.id2label[id_]
+
+
 if __name__ == '__main__':
     t = Tokenizer('data/CLEVR_v1.0/questions/CLEVR_tiny_questions.json')
     t.add_special('PAD')
@@ -64,5 +80,6 @@ if __name__ == '__main__':
     t.save('tmp/tiny-tokenizer.pickle')
     t = Tokenizer().load('tmp/tiny-tokenizer.pickle')
     print(t.word2id)
+    print('vocab size', t.get_vocab_size())
 
 
