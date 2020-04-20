@@ -74,8 +74,7 @@ class LabelEncoder:
 
 
 if __name__ == '__main__':
-    t = Tokenizer('data/CLEVR_v1.0/questions/CLEVR_tiny_questions.json')
-    t.add_special('PAD')
+    t = Tokenizer('data/CLEVR_v1.0/questions/CLEVR_tiny_val_questions.json')
     print(t.encode_sentence("hello many big objects"))
     t.save('tmp/tiny-tokenizer.pickle')
     t = Tokenizer().load('tmp/tiny-tokenizer.pickle')

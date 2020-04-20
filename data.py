@@ -6,10 +6,12 @@ from tokenizer import Tokenizer, LabelEncoder
 
 
 def read_paired_dataset(question_file, image_dir, tokenizer: Tokenizer, label_encoder: LabelEncoder,
-                        read_question_family=False, read_label=False, epoch=80, batch_size=64):
+                        read_question_family=False, read_label=False, epoch=80, batch_size=64,
+                        image_size=224):
     def load_image(d: dict):
-        nonlocal read_question_family
+        nonlocal read_question_family, image_size
         image = tf.io.decode_png(tf.io.read_file(d['image_file']))
+        image = tf.image.resize(image, [image_size, image_size])
         d.pop('image_file')
         d['image'] = image
         return d

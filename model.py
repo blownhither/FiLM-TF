@@ -8,13 +8,16 @@ class FilmModel(tf.keras.Model):
         super(FilmModel, self).__init__()
         self.embedding = tf.keras.layers.Embedding(vocab_size, embedding_dim)
         self.gru = tf.keras.layers.GRU(gru_size, return_sequences=False)
-        self.res_blocks = [(tf.keras.layers.Conv2D(cnn_channels, 1, activation='relu', padding='same'),
-                            tf.keras.layers.Conv2D(cnn_channels, 3, activation=None, padding='same'),
-                            tf.keras.layers.BatchNormalization(trainable=False),
-                            tf.keras.layers.Dense(cnn_channels),
-                            tf.keras.layers.Dense(cnn_channels),
-                            tf.keras.layers.ReLU())
-                           for _ in range(n_res_blocks)]
+        self.res_blocks = [(
+            tf.keras.layers.Conv2D(cnn_channels, 1, strides=(2, 2),
+                                   activation='relu', padding='same'),
+            tf.keras.layers.Conv2D(cnn_channels, 3, strides=(1, 1),
+                                   activation=None, padding='same'),
+            tf.keras.layers.BatchNormalization(trainable=False),
+            tf.keras.layers.Dense(cnn_channels),
+            tf.keras.layers.Dense(cnn_channels),
+            tf.keras.layers.ReLU()
+        ) for _ in range(n_res_blocks)]
         self.classifier_conv = tf.keras.layers.Conv2D(classifier_channels, 1, padding='same')
         self.max_pool = tf.keras.layers.GlobalMaxPool2D()
         self.hidden = tf.keras.layers.Dense(classifier_hidden, activation='relu')
