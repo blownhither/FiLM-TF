@@ -57,17 +57,20 @@ class TrainableFilmModel:
         total_count = 0
         total_correct_count = 0
         for batch in dataset:
+            batch_size = len(batch['label'])
             loss, correct_count = self.eval_step(batch)
             total_correct_count += correct_count
-            total_count += len(batch)
+            total_count += batch_size
             loss_records.append(loss)
             if comet_experiment is not None:
                 comet_experiment.log_metric('eval_loss', loss, epoch=epoch)
-                comet_experiment.log_metric('eval_acc', correct_count / len(batch), epoch=epoch)
+                comet_experiment.log_metric('eval_acc', correct_count / batch_size, epoch=epoch)
         mean_loss = np.mean(loss_records)
-        print(epoch, 'eval', 'loss=', mean_loss, 'acc=', total_count / total_correct_count, flush=True)
+        print(epoch, 'eval', 'loss=', mean_loss, 'acc=', total_correct_count / total_count,
+              flush=True)
         if comet_experiment is not None:
-            comet_experiment.log_metric('epoch_eval_acc', total_count / total_correct_count, epoch=epoch)
+            comet_experiment.log_metric('epoch_eval_acc', total_correct_count / total_count,
+                                        epoch=epoch)
             comet_experiment.log_metric('epoch_eval_loss', mean_loss, epoch=epoch)
         return mean_loss
 
@@ -77,7 +80,6 @@ def main(argv):
     experiment = Experiment()
     experiment.log_asset(__file__)
     experiment.log_parameters(hyper_parameters)
-
 
     tokenizer = Tokenizer().load(FLAGS.tokenizer_path)
     label_encoder = LabelEncoder(LabelEncoder.TRAIN_LABELS)

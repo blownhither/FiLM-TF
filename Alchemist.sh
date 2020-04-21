@@ -18,7 +18,7 @@ scp *.py .comet.config "$MACHINE:$REMOTE_DIR"
 #scp *.py .comet.config "$MACHINE:$REMOTE_DIR"
 #ssh "$MACHINE" "cd $REMOTE_DIR; $REMOTE_PY tokenizer.py --json_path=$TRAIN_QUESTIONS --save_to=$TRAIN_TOKENIZER 2>&1 | tee tok.log"
 #ssh "$MACHINE" "cd $REMOTE_DIR; $REMOTE_PY film.py --train_questions=$TRAIN_QUESTIONS --tokenizer_path=$TRAIN_TOKENIZER --image_dir=$TRAIN_IMAGE_DIR 2>&1 | tee film.log"
-ssh "$MACHINE" "screen -S myFilm -dm bash -c 'cd $REMOTE_DIR; $REMOTE_PY film.py --train_questions=$TRAIN_QUESTIONS --val_questions=$VAL_QUESTIONS --tokenizer_path=$TRAIN_TOKENIZER --train_image_dir=$TRAIN_IMAGE_DIR --val_image_dir=$VAL_IMAGE_DIR 2>&1 | tee film.log ' "
+ssh "$MACHINE" "screen -S myFilm -dm bash -c 'cd $REMOTE_DIR; $REMOTE_PY film.py --train_questions=$TRAIN_QUESTIONS --val_questions=$VAL_QUESTIONS --tokenizer_path=$TRAIN_TOKENIZER --train_image_dir=$TRAIN_IMAGE_DIR --val_image_dir=$VAL_IMAGE_DIR 2>&1 | tee film.log train-$DATE_STR.log ' "
 
 
 
