@@ -10,6 +10,11 @@ class FilmModel(tf.keras.Model):
 
         self.embedding = tf.keras.layers.Embedding(vocab_size, embedding_dim)
         self.gru = tf.keras.layers.GRU(gru_size, return_sequences=False)
+        self.conv_blocks = [(
+            tf.keras.layers.Conv2D(cnn_channels, 4, strides=(1, 1),
+                                   activation='relu', padding='same'),
+            tf.keras.layers.BatchNormalization(trainable=True),
+        ) for _ in range(4)]
         self.res_blocks = [(
             tf.keras.layers.Conv2D(cnn_channels, 1, strides=(2, 2),
                                    activation='relu', padding='same'),
@@ -32,6 +37,9 @@ class FilmModel(tf.keras.Model):
         emb = self.embedding(language_input)
         gru_out = self.gru(emb, mask=language_input != self.pad_id)
         tensor = image_input
+        for b in self.conv_blocks:
+            conv, bn = b
+            tensor = bn(conv(tensor))
         for b in self.res_blocks:
             tensor = self.append_coordinate_feature_map(tensor)
             tensor = self.call_resblock(b, tensor, gru_out)

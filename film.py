@@ -10,7 +10,7 @@ from data import read_paired_dataset
 
 hyper_parameters = {
     'lr': 3e-4,
-    'batch_size': 64,
+    'batch_size': 16,
     'epoch': 80,
 }
 
@@ -98,6 +98,10 @@ def main(argv):
                                pad_id=tokenizer.pad_id)
     for epoch in range(hyper_parameters['epoch']):
         model.train_epoch(train_dataset, comet_experiment=experiment, epoch=epoch)
+        if epoch == 0:
+            param_count = model.model.count_params()
+            print('param_size', param_count)
+            experiment.log_parameter('param_size', param_count)
         model.eval_batch(val_dataset, comet_experiment=experiment, epoch=epoch)
 
 
