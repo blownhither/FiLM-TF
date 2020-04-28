@@ -4,19 +4,20 @@ import tensorflow as tf
 
 class FilmModel(tf.keras.Model):
     def __init__(self, vocab_size, predict_size, embedding_dim=200, gru_size=4096, n_res_blocks=4,
-                 cnn_channels=128, classifier_channels=512, classifier_hidden=1024, pad_id=1):
+                 cnn_channels=128, classifier_channels=512, classifier_hidden=1024, pad_id=1,
+                 stem_layers=2):
         super(FilmModel, self).__init__()
         self.pad_id = pad_id
 
         self.embedding = tf.keras.layers.Embedding(vocab_size, embedding_dim)
         self.gru = tf.keras.layers.GRU(gru_size, return_sequences=False)
         self.conv_blocks = [(
-            tf.keras.layers.Conv2D(cnn_channels, 4, strides=(1, 1),
+            tf.keras.layers.Conv2D(cnn_channels, 4, strides=(2, 2),
                                    activation='relu', padding='same'),
             tf.keras.layers.BatchNormalization(trainable=True),
-        ) for _ in range(4)]
+        ) for _ in range(stem_layers)]
         self.res_blocks = [(
-            tf.keras.layers.Conv2D(cnn_channels, 1, strides=(2, 2),
+            tf.keras.layers.Conv2D(cnn_channels, 1, strides=(1, 1),
                                    activation='relu', padding='same'),
             tf.keras.layers.Conv2D(cnn_channels, 3, strides=(1, 1),
                                    activation=None, padding='same'),

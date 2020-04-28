@@ -10,7 +10,7 @@ from data import read_paired_dataset
 
 hyper_parameters = {
     'lr': 3e-4,
-    'batch_size': 16,
+    'batch_size': 64,
     'epoch': 80,
 }
 
