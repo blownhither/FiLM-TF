@@ -1,3 +1,5 @@
+import os
+import datetime
 import numpy as np
 from comet_ml import Experiment
 import tensorflow as tf
@@ -7,12 +9,8 @@ from model import FilmModel
 from tokenizer import Tokenizer, LabelEncoder
 from data import read_paired_dataset
 
-
-hyper_parameters = {
-    'lr': 3e-4,
-    'batch_size': 64,
-    'epoch': 80,
-}
+hyper_parameters = {'lr': 3e-4, 'batch_size': 64, 'epoch': 80, }
+DATETIME = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
 
 
 class TrainableFilmModel:
@@ -38,9 +36,10 @@ class TrainableFilmModel:
             loss = self.train_step(batch)
             loss_records.append(loss)
             if comet_experiment is not None:
-                comet_experiment.log_metric('train_loss', loss, epoch=epoch)
+                comet_experiment.log_metric('train_loss', loss, epoch=epoch, step=self.global_step)
         mean_loss = np.mean(loss_records)
-        comet_experiment.log_metric('epoch_train_loss', mean_loss, epoch=epoch)
+        comet_experiment.log_metric('epoch_train_loss', mean_loss, epoch=epoch,
+                                    step=self.global_step)
         print(epoch, 'train', 'loss=', mean_loss, flush=True)
         return mean_loss
 
@@ -52,7 +51,7 @@ class TrainableFilmModel:
         correct_count = tf.reduce_sum(tf.cast(batch['label'] == choice, dtype=tf.float32))
         return loss.numpy(), correct_count.numpy()
 
-    def eval_batch(self, dataset, comet_experiment=None, epoch=None):
+    def eval_all(self, dataset, comet_experiment=None, epoch=None):
         loss_records = []
         total_count = 0
         total_correct_count = 0
@@ -63,15 +62,17 @@ class TrainableFilmModel:
             total_count += batch_size
             loss_records.append(loss)
             if comet_experiment is not None:
-                comet_experiment.log_metric('eval_loss', loss, epoch=epoch)
-                comet_experiment.log_metric('eval_acc', correct_count / batch_size, epoch=epoch)
+                comet_experiment.log_metric('eval_loss', loss, step=self.global_step, epoch=epoch)
+                comet_experiment.log_metric('eval_acc', correct_count / batch_size,
+                                            step=self.global_step, epoch=epoch)
         mean_loss = np.mean(loss_records)
         print(epoch, 'eval', 'loss=', mean_loss, 'acc=', total_correct_count / total_count,
               flush=True)
         if comet_experiment is not None:
             comet_experiment.log_metric('epoch_eval_acc', total_correct_count / total_count,
+                                        step=self.global_step, epoch=epoch)
+            comet_experiment.log_metric('epoch_eval_loss', mean_loss, step=self.global_step,
                                         epoch=epoch)
-            comet_experiment.log_metric('epoch_eval_loss', mean_loss, epoch=epoch)
         return mean_loss
 
 
@@ -80,6 +81,10 @@ def main(argv):
     experiment = Experiment()
     experiment.log_asset(__file__)
     experiment.log_parameters(hyper_parameters)
+    experiment.log_parameter('datetime', DATETIME)
+    model_dir = os.path.join(os.path.dirname(__file__), f'tmp/model-{DATETIME}/')
+    os.mkdir(model_dir)
+    experiment.log_parameter('model_dir', model_dir)
 
     tokenizer = Tokenizer().load(FLAGS.tokenizer_path)
     label_encoder = LabelEncoder(LabelEncoder.TRAIN_LABELS)
@@ -102,7 +107,11 @@ def main(argv):
             param_count = model.model.count_params()
             print('param_size', param_count)
             experiment.log_parameter('param_size', param_count)
-        model.eval_batch(val_dataset, comet_experiment=experiment, epoch=epoch)
+        model.eval_all(val_dataset, comet_experiment=experiment, epoch=epoch)
+
+        # save weights
+        if epoch > 5 and epoch % 5 == 0:
+            model.model.save(os.path.join(model_dir, f'model-e{epoch}s{model.global_step}.savedmodel'))
 
 
 if __name__ == '__main__':
@@ -110,11 +119,9 @@ if __name__ == '__main__':
     flags.DEFINE_string('train_questions',
                         'data/CLEVR_v1.0/questions/CLEVR_tiny_val_questions.json',
                         'path to read train question json')
-    flags.DEFINE_string('val_questions',
-                        'data/CLEVR_v1.0/questions/CLEVR_tiny_val_questions.json',
+    flags.DEFINE_string('val_questions', 'data/CLEVR_v1.0/questions/CLEVR_tiny_val_questions.json',
                         'path to read val question json')
     flags.DEFINE_string('train_image_dir', 'data/CLEVR_v1.0/images/val/',
                         'path to read train images')
     flags.DEFINE_string('val_image_dir', 'data/CLEVR_v1.0/images/val/', 'path to read val images')
     app.run(main)
-
