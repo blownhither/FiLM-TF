@@ -5,12 +5,17 @@ import tensorflow as tf
 class FilmModel(tf.keras.Model):
     def __init__(self, vocab_size, predict_size, embedding_dim=200, gru_size=4096, n_res_blocks=4,
                  cnn_channels=128, classifier_channels=512, classifier_hidden=1024, pad_id=1,
-                 stem_layers=4):
+                 stem_layers=4, question_types=90):
         super(FilmModel, self).__init__()
         self.pad_id = pad_id
 
         self.embedding = tf.keras.layers.Embedding(vocab_size, embedding_dim)
         self.gru = tf.keras.layers.GRU(gru_size, return_sequences=False)
+        self.question_classifier = [
+            tf.keras.layers.Dense(classifier_hidden, activation='relu'),
+            tf.keras.layers.Dense(question_types)
+        ]
+
         self.conv_blocks = [(
             tf.keras.layers.Conv2D(cnn_channels, 4, strides=(2, 2),
                                    activation='relu', padding='same'),
@@ -34,6 +39,9 @@ class FilmModel(tf.keras.Model):
         self.coordinate_feature_cache = {}
 
     def call(self, inputs, training=None, mask=None):
+        """
+        [language_input, image_input] -> [logits, question_type_logits]
+        """
         language_input, image_input = inputs
         emb = self.embedding(language_input)
         gru_out = self.gru(emb, mask=language_input != self.pad_id)
@@ -47,7 +55,11 @@ class FilmModel(tf.keras.Model):
         tensor = self.append_coordinate_feature_map(tensor)
         tensor = self.max_pool(self.classifier_conv(tensor))
         logits = self.classify(self.hidden(tensor))
-        return logits
+
+        # classify question
+        hidden, last = self.question_classifier
+        question_type_logits = last(hidden(gru_out))
+        return [logits, question_type_logits]
 
     def append_coordinate_feature_map(self, tensor):
         size = tensor.get_shape().as_list()[1]
@@ -90,9 +102,10 @@ def _test_model():
         [0, 3, 3]
     ])
     images = np.random.rand(2, 64, 64, 3)
-    logits = model((language, images))
-    print(logits.shape)
+    logits, q_logits = model((language, images))
     print(logits)
+    print(q_logits)
+    print(logits.shape, q_logits.shape)
 
 
 if __name__ == '__main__':

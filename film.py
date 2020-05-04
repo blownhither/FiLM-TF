@@ -9,22 +9,30 @@ from model import FilmModel
 from tokenizer import Tokenizer, LabelEncoder
 from data import read_paired_dataset
 
-hyper_parameters = {'lr': 3e-4, 'batch_size': 64, 'epoch': 80, }
+hyper_parameters = {'lr': 3e-4, 'batch_size': 64, 'epoch': 80, 'question_family_supervision': True,
+    'question_family_weight': 0.1, }
 DATETIME = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
 
 
 class TrainableFilmModel:
     def __init__(self, vocab_size, predict_size, pad_id):
         self.model = FilmModel(vocab_size, predict_size, pad_id=pad_id)
-        self.loss_fn = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
+        self.loss_fn = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True,
+                                                                     name='answer_loss')
+        self.question_loss_fn = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True,
+                                                                              name='question_family_loss')
         self.accuracy_fn = tf.keras.metrics.SparseCategoricalAccuracy()
         self.optimizer = tf.keras.optimizers.Adam(hyper_parameters['lr'])
         self.global_step = 0
 
     def train_step(self, batch):
         with tf.GradientTape() as t:
-            logits = self.model((batch['question'], batch['image']))
+            logits, question_family_logits = self.model((batch['question'], batch['image']))
             loss = self.loss_fn(batch['label'], logits)
+            if hyper_parameters['question_family_supervision']:
+                loss += self.question_loss_fn(batch['question_family_index'],
+                                              question_family_logits) * hyper_parameters[
+                            'question_family_weight']
         grads = t.gradient(loss, self.model.trainable_variables)
         self.optimizer.apply_gradients(zip(grads, self.model.trainable_variables))
         self.global_step += 1
@@ -110,8 +118,9 @@ def main(argv):
         model.eval_all(val_dataset, comet_experiment=experiment, epoch=epoch)
 
         # save weights
-        if epoch > 5 and epoch % 5 == 0:
-            model.model.save(os.path.join(model_dir, f'model-e{epoch}s{model.global_step}.savedmodel'))
+        if epoch % 5 == 0:
+            model.model.save_weights(
+                os.path.join(model_dir, f'model-e{epoch}s{model.global_step}.savedmodel'))
 
 
 if __name__ == '__main__':
