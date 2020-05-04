@@ -9,8 +9,13 @@ from model import FilmModel
 from tokenizer import Tokenizer, LabelEncoder
 from data import read_paired_dataset
 
-hyper_parameters = {'lr': 3e-4, 'batch_size': 64, 'epoch': 80, 'question_family_supervision': True,
-    'question_family_weight': 0.1, }
+hyper_parameters = {
+    'lr': 3e-4,
+    'batch_size': 64,
+    'epoch': 80,
+    'question_family_supervision': True,
+    'question_family_weight': 1e-2
+}
 DATETIME = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
 
 
@@ -36,6 +41,8 @@ class TrainableFilmModel:
         grads = t.gradient(loss, self.model.trainable_variables)
         self.optimizer.apply_gradients(zip(grads, self.model.trainable_variables))
         self.global_step += 1
+        if self.global_step % 100 == 0:
+            print('step', self.global_step, 'loss', loss.numpy())
         return loss.numpy()
 
     def train_epoch(self, dataset, comet_experiment=None, epoch=None):
