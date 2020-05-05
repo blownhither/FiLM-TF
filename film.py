@@ -14,14 +14,16 @@ hyper_parameters = {
     'batch_size': 64,
     'epoch': 80,
     'question_family_supervision': True,
-    'question_family_weight': 1e-2
+    'question_family_weight': 1e-3,
+    'stem_layer': 2,
 }
 DATETIME = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
 
 
 class TrainableFilmModel:
     def __init__(self, vocab_size, predict_size, pad_id):
-        self.model = FilmModel(vocab_size, predict_size, pad_id=pad_id)
+        self.model = FilmModel(vocab_size, predict_size, pad_id=pad_id,
+                               stem_layers=hyper_parameters['stem_layer'])
         self.loss_fn = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True,
                                                                      name='answer_loss')
         self.question_loss_fn = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True,
@@ -59,7 +61,7 @@ class TrainableFilmModel:
         return mean_loss
 
     def eval_step(self, batch):
-        logits = self.model((batch['question'], batch['image']))
+        logits, _ = self.model((batch['question'], batch['image']))
         loss = self.loss_fn(batch['label'], logits)
         prob = tf.nn.softmax(logits, axis=1)
         choice = tf.cast(tf.argmax(prob, axis=1), dtype=tf.int32)

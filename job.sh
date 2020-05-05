@@ -23,10 +23,13 @@ VAL_IMAGE_DIR="/nbu/people/zma17/CLEVR_v1.0/images/val"
 
 
 source "$REMOTE_ENV"/bin/activate;
-export LD_LIBRARY_PATH=/local/projects/cuda10/cuda-10.1/lib64:/local/projects/cuda10/cuda-10.1/extras/CUPTI;
+# still need cuda10 for libcublas.so.10
+export LD_LIBRARY_PATH=/home/zma17/projects/myFilm/libmock:/home/zma17/tools/lib64:/local/projects/cuda10/cuda-10.1/lib64:/local/projects/cuda10/cuda-10.1/extras/CUPTI:/local/projects/cuda10/cuda-10.0/lib64;
 
 python film.py --train_questions="$TRAIN_QUESTIONS" \
     --val_questions="$VAL_QUESTIONS" \
     --tokenizer_path="$TRAIN_TOKENIZER" \
     --train_image_dir="$TRAIN_IMAGE_DIR" \
     --val_image_dir="$VAL_IMAGE_DIR" 2>&1 | tee rawT.log "film-$DATE_STR.log";
+
+#python test_gpu.py | tee "film-$DATE_STR.log";

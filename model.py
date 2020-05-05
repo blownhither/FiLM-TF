@@ -3,9 +3,9 @@ import tensorflow as tf
 
 
 class FilmModel(tf.keras.Model):
-    def __init__(self, vocab_size, predict_size, embedding_dim=200, gru_size=4096, n_res_blocks=4,
-                 cnn_channels=128, classifier_channels=512, classifier_hidden=1024, pad_id=1,
-                 stem_layers=4, question_types=90):
+    def __init__(self, vocab_size, predict_size, embedding_dim=200, gru_size=4096,
+                 n_res_blocks=4, cnn_channels=128, classifier_channels=512, classifier_hidden=1024,
+                 pad_id=1, stem_layers=4, question_types=90):
         super(FilmModel, self).__init__()
         self.pad_id = pad_id
 
